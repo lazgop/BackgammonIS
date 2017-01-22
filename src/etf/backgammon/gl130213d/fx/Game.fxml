@@ -2,6 +2,7 @@
 
 <?import java.net.URL?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -19,7 +20,18 @@
                     <items>
                       <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                            <children>
-                              <Button fx:id="diceButton" layoutX="248.0" layoutY="43.0" mnemonicParsing="false" text="Roll dice" />
+                              <Button fx:id="diceButton" layoutX="613.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleDiceButtonAction" text="Roll dice" />
+                              <Button fx:id="setUpButton" layoutX="15.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleSetUpButtonAction" text="Start Game" />
+                              <Label layoutX="134.0" layoutY="19.0" text="Now playing:" />
+                              <Label fx:id="nowPlayingLabel" layoutX="214.0" layoutY="19.0" />
+                              <Label layoutX="135.0" layoutY="34.0" text="Points Red:" />
+                              <Label fx:id="pointsRedLabel" layoutX="215.0" layoutY="34.0" />
+                              <Label layoutX="136.0" layoutY="51.0" text="Points White:" />
+                              <Label fx:id="pointsWhiteLabel" layoutX="218.0" layoutY="51.0" />
+                              <Label fx:id="diceOneLabel" layoutX="614.0" layoutY="51.0" />
+                              <Label fx:id="diceTwoLabel" layoutX="651.0" layoutY="51.0" />
+                              <Label layoutX="350.0" layoutY="19.0" text="Stage:" />
+                              <Label fx:id="stageLabel" layoutX="350.0" layoutY="43.0" />
                            </children>
                         </AnchorPane>
                       <AnchorPane id="backgammonTable" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="680.0" styleClass="gameboard" stylesheets="@../layouts/game.css" />

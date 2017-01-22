@@ -5,6 +5,7 @@
  */
 package etf.backgammon.gl130213d.controllers;
 
+import etf.backgammon.gl130213d.wrappers.SceneWrapper;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -18,7 +19,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Slider;
 import javafx.stage.Stage;
 
 /**
@@ -27,11 +31,16 @@ import javafx.stage.Stage;
  */
 public class MainMenuController implements Initializable {
     
-    
-    
-    
+    @FXML
+    private CheckBox enemyCheckbox;
     @FXML
     private ChoiceBox matchPointsChoiceBox;
+    @FXML
+    private CheckBox colorCheckbox;
+    @FXML
+    private Slider treeDepthSlider;
+    @FXML
+    private Button startButton;
     
     
 
@@ -44,6 +53,12 @@ public class MainMenuController implements Initializable {
 
     @FXML
     private void handleStartButtonAction(ActionEvent event) {
+        boolean isEnemyComputer = enemyCheckbox.isSelected();
+        String matchPoints = (String) matchPointsChoiceBox.getValue();
+        boolean isColorRed = colorCheckbox.isSelected();
+        int treeDepth = (int) treeDepthSlider.getValue();
+        
+        
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Parent root = null;
         try {
@@ -52,7 +67,7 @@ public class MainMenuController implements Initializable {
             Logger.getLogger(MainMenuController.class.getName()).log(Level.SEVERE, null, ex);
         }
         if (root != null) {
-            Scene scene = new Scene(root);
+            Scene scene = new SceneWrapper(root, isEnemyComputer, matchPoints, isColorRed, treeDepth);
             stage.setScene(scene);
             stage.show();
         }
