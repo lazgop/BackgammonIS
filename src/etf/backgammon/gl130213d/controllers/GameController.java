@@ -5,16 +5,25 @@
  */
 package etf.backgammon.gl130213d.controllers;
 
+import etf.backgammon.gl130213d.models.Token;
 import etf.backgammon.gl130213d.wrappers.SceneWrapper;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 /**
@@ -23,35 +32,98 @@ import javafx.stage.Stage;
  * @author lazar
  */
 public class GameController implements Initializable {
-    
+
+    final String[] STAGE = {"Roll the dice",
+        "Select first token",
+        "Select the field where to move selected token",
+        "Select second token", //"Select the field where to move selected token",
+    };
+
+    private boolean colorRed;
+    private boolean enemyComputer;
+    private int matchPoints;
+    private int treeDepth;
+
+    private int diceOneValue = 0;
+    private int diceTwoValue = 0;
+    private int[][] lastTwoDiceValues = {{0, 0}, {0, 0}};
+    final private int STARTING_FIELDS[][][] = {{
+        {10, 12},
+        {9, 12},
+        {10, 0},
+        {9, 0},
+        {8, 0},
+        {7, 0},
+        {6, 0},
+        {0, 4},
+        {1, 4},
+        {2, 4},
+        {0, 7},
+        {1, 7},
+        {2, 7},
+        {3, 7},
+        {4, 7}
+    }, {
+        {0, 12},
+        {1, 12},
+        {0, 0},
+        {1, 0},
+        {2, 0},
+        {3, 0},
+        {4, 0},
+        {10, 4},
+        {9, 4},
+        {8, 4},
+        {10, 7},
+        {9, 7},
+        {8, 7},
+        {7, 7},
+        {6, 7}
+    }}; //Red and white
+
+    private Node spikes[][] = new Node[24][6];
+    private Token tokens[][] = new Token[11][13];
+
+    private int playerOnePoints = 167;
+    private int playerTwoPoints = 167;
+
     @FXML
     private TreeView treeView;
     @FXML
     private Button diceButton;
     @FXML
     private Button setUpButton;
-    
-    private boolean colorRed;
-    private boolean enemyComputer;
-    private int matchPoints;
-    private int treeDepth;
+    @FXML
+    private Label nowPlayingLabel;
+    @FXML
+    private Label pointsRedLabel;
+    @FXML
+    private Label pointsWhiteLabel;
+    @FXML
+    private Label diceOneLabel;
+    @FXML
+    private Label diceTwoLabel;
+    @FXML
+    private Label stageLabel;
+    @FXML
+    private GridPane boardGrid;
+    @FXML
+    private Label whiteBarLabel;
+    @FXML
+    private Label redBarLabel;
+
     /**
      * Initializes the controller class.
      */
     @Override
-    public void initialize(URL location, ResourceBundle resources) { 
-    }
-    
-    @FXML
-    private void handleDiceButtonAction(ActionEvent event) {
-        System.out.println("klik na dice");
+    public void initialize(URL location, ResourceBundle resources) {
     }
 
     @FXML
     private void handleSetUpButtonAction(ActionEvent event) {
         SceneWrapper scene = null;
         if (setUpButton.getScene() instanceof SceneWrapper) {
-             scene = (SceneWrapper) setUpButton.getScene();
+            scene = (SceneWrapper) setUpButton.getScene();
         } else {
             System.out.println("ERROR");
             return;
@@ -60,5 +132,98 @@ public class GameController implements Initializable {
         enemyComputer = scene.isEnemyComputer();
         matchPoints = Integer.parseInt(scene.getMatchPoints());
         treeDepth = scene.getTreeDepth();
+        for (Node element : boardGrid.getChildren()) {
+            
+            //Set initial colors of all tokens to
+            Integer columnIndex = GridPane.getColumnIndex(element);
+            Integer rowIndex = GridPane.getRowIndex(element);
+
+            if (!((columnIndex == 6 && rowIndex == 4) || (columnIndex == 6 && rowIndex == 6))) { //Don't change color of bar tokens
+                ((Circle) element).setFill(Color.web("0xffffff", 0));
+                tokens[rowIndex][columnIndex] = new Token((Circle) element);
+            }
+            
+            //Set onClick listeners
+            element.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    handleTokenClick(event, element);
+                }
+            });
+        }
+
+        //Set color of red and white tokens
+        for (int color = 0; color < 2; color++) {
+            for (int i = 0; i < 15; i++) {
+                int rowIndex = STARTING_FIELDS[color][i][0];
+                int columnIndex = STARTING_FIELDS[color][i][1];
+                
+                tokens[rowIndex][columnIndex].getCircle().setFill(Color.web(color == 0 ? "0xff1f1f" : "0xffffff", 1));
+            }
+        }
+        playerOnePoints = 167;
+        playerTwoPoints = 167;
+
+        diceOneValue = 0;
+        diceTwoValue = 0;
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                lastTwoDiceValues[i][j] = 0;
+            }
+        }
+
+        nowPlayingLabel.setText(colorRed ? "Red" : "White");
+        pointsRedLabel.setText((colorRed ? playerOnePoints : playerTwoPoints) + "");
+        pointsWhiteLabel.setText((!colorRed ? playerOnePoints : playerTwoPoints) + "");
+        stageLabel.setText(STAGE[0]);
+        diceOneLabel.setText(0 + "");
+        diceTwoLabel.setText(0 + "");
+
+        setUpButton.setText("Restart game");
     }
+
+    @FXML
+    private void handleDiceButtonAction(ActionEvent event) {
+        if (stageLabel.getText().equals(STAGE[0])) {
+            do {
+                diceOneValue = (int) (Math.random() * 6);
+                diceTwoValue = (int) (Math.random() * 6);
+            } while ((diceOneValue == lastTwoDiceValues[0][0]
+                    && diceOneValue == lastTwoDiceValues[1][0]
+                    && diceTwoValue == lastTwoDiceValues[0][1]
+                    && diceTwoValue == lastTwoDiceValues[1][1])
+                    || (diceOneValue == lastTwoDiceValues[0][1]
+                    && diceOneValue == lastTwoDiceValues[1][1]
+                    && diceTwoValue == lastTwoDiceValues[0][0]
+                    && diceTwoValue == lastTwoDiceValues[1][0])
+                    || (diceOneValue == lastTwoDiceValues[0][0]
+                    && diceOneValue == lastTwoDiceValues[1][1]
+                    && diceTwoValue == lastTwoDiceValues[0][1]
+                    && diceTwoValue == lastTwoDiceValues[1][0])
+                    || (diceOneValue == lastTwoDiceValues[0][1]
+                    && diceOneValue == lastTwoDiceValues[1][0]
+                    && diceTwoValue == lastTwoDiceValues[0][0]
+                    && diceTwoValue == lastTwoDiceValues[1][1]));
+            lastTwoDiceValues[0][0] = lastTwoDiceValues[1][0];
+            lastTwoDiceValues[0][1] = lastTwoDiceValues[1][1];
+            lastTwoDiceValues[1][0] = diceOneValue;
+            lastTwoDiceValues[1][1] = diceTwoValue;
+
+            diceOneLabel.setText(diceOneValue + "");
+            diceTwoLabel.setText(diceTwoValue + "");
+
+            stageLabel.setText(STAGE[1]);
+        }
+    }
+
+    private void handleTokenClick(MouseEvent event, Node element) {
+//        Circle token = (Circle) element;
+//        token.setFill(Color.web("0xffffff", 0));
+//        Color valueOf = Color.valueOf(token.getFill().toString());
+
+        System.out.println("Row: " + GridPane.getRowIndex(element));
+        System.out.println("Column: " + GridPane.getColumnIndex(element));
+    }
+
 }
