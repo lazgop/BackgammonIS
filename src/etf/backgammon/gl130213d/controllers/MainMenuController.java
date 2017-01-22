@@ -26,9 +26,14 @@ import javafx.stage.Stage;
  * @author lazar
  */
 public class MainMenuController implements Initializable {
-
+    
+    
+    
+    
     @FXML
-    ChoiceBox matchPointsChoiceBox;
+    private ChoiceBox matchPointsChoiceBox;
+    
+    
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

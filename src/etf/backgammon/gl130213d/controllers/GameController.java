@@ -7,7 +7,9 @@ package etf.backgammon.gl130213d.controllers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.TreeView;
 
 /**
  * FXML Controller class
@@ -15,7 +17,9 @@ import javafx.fxml.Initializable;
  * @author lazar
  */
 public class GameController implements Initializable {
-
+    
+    @FXML
+    private TreeView treeView;
     /**
      * Initializes the controller class.
      */

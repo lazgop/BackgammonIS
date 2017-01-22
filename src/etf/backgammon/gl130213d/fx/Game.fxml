@@ -1,14 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="etf.backgammon.gl130213d.controllers.GameController">
+<AnchorPane id="AnchorPane" prefHeight="577.0" prefWidth="881.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="etf.backgammon.gl130213d.controllers.GameController">
     <stylesheets>
-        <URL value="@/etf/backgammon/gl130213d/layouts/game.css"/>
+        <URL value="@/etf/backgammon/gl130213d/layouts/game.css" />
     </stylesheets>
+   <children>
+      <SplitPane dividerPositions="0.7908415841584159" prefHeight="577.0" prefWidth="822.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="-12.0" AnchorPane.topAnchor="0.0">
+        <items>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+               <children>
+                  <SplitPane dividerPositions="0.15532286212914484" layoutX="105.0" layoutY="139.0" orientation="VERTICAL" prefHeight="575.0" prefWidth="693.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <items>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                           <children>
+                              <Button fx:id="diceButton" layoutX="248.0" layoutY="43.0" mnemonicParsing="false" text="Roll dice" />
+                           </children>
+                        </AnchorPane>
+                      <AnchorPane id="backgammonTable" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="680.0" styleClass="gameboard" stylesheets="@../layouts/game.css" />
+                    </items>
+                  </SplitPane>
+               </children>
+            </AnchorPane>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+               <children>
+                  <TreeView fx:id="treeView" layoutX="-26.0" layoutY="157.0" prefHeight="575.0" prefWidth="165.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
+   </children>
 </AnchorPane>

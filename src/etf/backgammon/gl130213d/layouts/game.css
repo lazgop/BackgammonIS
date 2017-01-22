@@ -5,3 +5,8 @@
 .mainFxmlClass {
 
 }
+
+.gameboard {
+    -fx-background-image: url("./gameboard.jpg");
+    -fx-background-size: cover;
+}
