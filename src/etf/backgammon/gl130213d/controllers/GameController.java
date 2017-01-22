@@ -36,14 +36,13 @@ public class GameController implements Initializable {
     final String[] STAGE = {"Roll the dice",
         "Select first token",
         "Select the field where to move selected token",
-        "Select second token", 
+        "Select second token",
         "Select the field where to move the second token"
     };
-    
+
     final String FILL_BLANK = "0x11111100";
     final String FILL_WHITE = "0xffffffff";
     final String FILL_RED = "0xff0000ff";
-    
 
     private boolean colorRed;
     private boolean enemyComputer;
@@ -229,10 +228,10 @@ public class GameController implements Initializable {
     private void handleTokenClick(MouseEvent event, Node element) {
         int rowIndex = GridPane.getRowIndex(element);
         int columnIndex = GridPane.getColumnIndex(element);
-        
+
         String currentPlayerColor = nowPlayingLabel.getText().equals("White") ? FILL_WHITE : FILL_RED;
-        String clickedTokenColor = ((Circle)element).getFill().toString();
-        
+        String clickedTokenColor = ((Circle) element).getFill().toString();
+
         if (stageLabel.getText().equals(STAGE[1]) || stageLabel.getText().equals(STAGE[3])) {
             if (tokens[rowIndex][columnIndex] != null) {
                 if (clickedTokenColor.equals(currentPlayerColor)) {
@@ -245,24 +244,28 @@ public class GameController implements Initializable {
                 }
             }
         } else if (stageLabel.getText().equals(STAGE[2]) || stageLabel.getText().equals(STAGE[4])) {
-            if (rowIndex == selectedRow && columnIndex == selectedColumn){
+            if (rowIndex == selectedRow && columnIndex == selectedColumn) {
                 tokens[rowIndex][columnIndex].getCircle().setStroke(Color.BLACK);
                 String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[1] : STAGE[3];
                 System.out.println(nextStage);
                 stageLabel.setText(nextStage);
             } else {
-                if (clickedTokenColor.equals(FILL_BLANK)){
+                if (clickedTokenColor.equals(FILL_BLANK)) {
                     tokens[selectedRow][selectedColumn].getCircle().setStroke(Color.BLACK);
                     tokens[selectedRow][selectedColumn].getCircle().setFill(Color.web(FILL_BLANK));
                     tokens[rowIndex][columnIndex].getCircle().setFill(Color.web(currentPlayerColor));
                     String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[3] : STAGE[0];
+                    if (nextStage.equals(STAGE[0])) {
+                        nowPlayingLabel.setText(currentPlayerColor.equals(FILL_WHITE) ? "Red" : "White");
+                    }
                     System.out.println(nextStage);
                     stageLabel.setText(nextStage);
                 }
-            }   
+            }
         }
 
     }
+
     private void calculateAllowedPositions() {
     }
 
