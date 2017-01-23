@@ -5,6 +5,7 @@
  */
 package etf.backgammon.gl130213d.controllers;
 
+import etf.backgammon.gl130213d.models.Dice;
 import etf.backgammon.gl130213d.models.Token;
 import etf.backgammon.gl130213d.wrappers.SceneWrapper;
 import java.net.URL;
@@ -48,10 +49,9 @@ public class GameController implements Initializable {
     private boolean enemyComputer;
     private int matchPoints;
     private int treeDepth;
-
-    private int diceOneValue = 0;
-    private int diceTwoValue = 0;
-    private int[][] lastTwoDiceValues = {{0, 0}, {0, 0}};
+    
+    private Dice dice;
+    
     final private int STARTING_FIELDS[][][] = {{
         {10, 12},
         {9, 12},
@@ -172,14 +172,7 @@ public class GameController implements Initializable {
         playerOnePoints = 167;
         playerTwoPoints = 167;
 
-        diceOneValue = 0;
-        diceTwoValue = 0;
-
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                lastTwoDiceValues[i][j] = 0;
-            }
-        }
+        dice = new Dice();
 
         nowPlayingLabel.setText(colorRed ? "Red" : "White");
         pointsRedLabel.setText((colorRed ? playerOnePoints : playerTwoPoints) + "");
@@ -194,32 +187,11 @@ public class GameController implements Initializable {
     @FXML
     private void handleDiceButtonAction(ActionEvent event) {
         if (stageLabel.getText().equals(STAGE[0])) {
-            do {
-                diceOneValue = (int) (Math.random() * 5 + 1);
-                diceTwoValue = (int) (Math.random() * 5 + 1);
-            } while ((diceOneValue == lastTwoDiceValues[0][0]
-                    && diceOneValue == lastTwoDiceValues[1][0]
-                    && diceTwoValue == lastTwoDiceValues[0][1]
-                    && diceTwoValue == lastTwoDiceValues[1][1])
-                    || (diceOneValue == lastTwoDiceValues[0][1]
-                    && diceOneValue == lastTwoDiceValues[1][1]
-                    && diceTwoValue == lastTwoDiceValues[0][0]
-                    && diceTwoValue == lastTwoDiceValues[1][0])
-                    || (diceOneValue == lastTwoDiceValues[0][0]
-                    && diceOneValue == lastTwoDiceValues[1][1]
-                    && diceTwoValue == lastTwoDiceValues[0][1]
-                    && diceTwoValue == lastTwoDiceValues[1][0])
-                    || (diceOneValue == lastTwoDiceValues[0][1]
-                    && diceOneValue == lastTwoDiceValues[1][0]
-                    && diceTwoValue == lastTwoDiceValues[0][0]
-                    && diceTwoValue == lastTwoDiceValues[1][1]));
-            lastTwoDiceValues[0][0] = lastTwoDiceValues[1][0];
-            lastTwoDiceValues[0][1] = lastTwoDiceValues[1][1];
-            lastTwoDiceValues[1][0] = diceOneValue;
-            lastTwoDiceValues[1][1] = diceTwoValue;
-
-            diceOneLabel.setText(diceOneValue + "");
-            diceTwoLabel.setText(diceTwoValue + "");
+            
+            dice.roll();
+            
+            diceOneLabel.setText(dice.getDiceOneValue() + "");
+            diceTwoLabel.setText(dice.getDiceTwoValue() + "");
 
             stageLabel.setText(STAGE[1]);
         }
