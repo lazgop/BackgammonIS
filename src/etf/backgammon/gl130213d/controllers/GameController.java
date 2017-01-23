@@ -353,12 +353,13 @@ public class GameController implements Initializable {
                 if (spikes[spiker][0] == null) { // If empty row
                     allowedFields[1][0] = board.getRowSpikeToToken(spiker, 0);
                     allowedFields[1][1] = board.getColumnSpikeToToken(spiker, 0);
-                    allowedFieldPoints[0] = diceTwoValue;
+                    allowedFieldPoints[1] = diceTwoValue;
+                    
                 } else if (spikes[spiker][0].getCircle().getFill().toString().equals(isPlayerWhite ? FILL_RED : FILL_WHITE)
                         && spikes[spiker][1] == null) { // If only one enemy token in a row
                     allowedFields[1][0] = board.getRowSpikeToToken(spiker, 0);
                     allowedFields[1][1] = board.getColumnSpikeToToken(spiker, 0);
-                    allowedFieldPoints[0] = isPlayerWhite ? 24 - spiker : spiker;
+                    allowedFieldPoints[1] = isPlayerWhite ? 24 - spiker : spiker;
                 } else { // Check if all are friend tokens and if there is available spot
                     int firstEmptySpikeColumn = -1;
                     for (int i = 1; i < 5; i++) {
@@ -370,7 +371,7 @@ public class GameController implements Initializable {
                     if (firstEmptySpikeColumn != -1) {
                         allowedFields[1][0] = board.getRowSpikeToToken(spiker, firstEmptySpikeColumn);
                         allowedFields[1][1] = board.getColumnSpikeToToken(spiker, firstEmptySpikeColumn);
-                        allowedFieldPoints[0] = diceTwoValue;
+                        allowedFieldPoints[1] = diceTwoValue;
                     }
                 }
             } else {
