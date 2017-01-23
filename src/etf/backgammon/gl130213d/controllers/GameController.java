@@ -5,6 +5,7 @@
  */
 package etf.backgammon.gl130213d.controllers;
 
+import etf.backgammon.gl130213d.models.Board;
 import etf.backgammon.gl130213d.models.Dice;
 import etf.backgammon.gl130213d.models.Token;
 import etf.backgammon.gl130213d.wrappers.SceneWrapper;
@@ -49,51 +50,56 @@ public class GameController implements Initializable {
     private boolean enemyComputer;
     private int matchPoints;
     private int treeDepth;
-    
+
     private Dice dice;
-    
-    final private int STARTING_FIELDS[][][] = {{
-        {10, 12},
-        {9, 12},
-        {10, 0},
-        {9, 0},
-        {8, 0},
-        {7, 0},
-        {6, 0},
-        {0, 4},
-        {1, 4},
-        {2, 4},
-        {0, 7},
-        {1, 7},
-        {2, 7},
-        {3, 7},
-        {4, 7}
+
+    final private int STARTING_FIELDS[][][][] = {{
+        {{10, 12}, {0, 0}},
+        {{9, 12}, {0, 1}},
+        {{10, 0}, {11, 0}},
+        {{9, 0}, {11, 1}},
+        {{8, 0}, {11, 2}},
+        {{7, 0}, {11, 3}},
+        {{6, 0}, {11, 4}},
+        {{0, 4}, {16, 0}},
+        {{1, 4}, {16, 1}},
+        {{2, 4}, {16, 2}},
+        {{0, 7}, {18, 0}},
+        {{1, 7}, {18, 1}},
+        {{2, 7}, {18, 2}},
+        {{3, 7}, {18, 3}},
+        {{4, 7}, {18, 4}}
     }, {
-        {0, 12},
-        {1, 12},
-        {0, 0},
-        {1, 0},
-        {2, 0},
-        {3, 0},
-        {4, 0},
-        {10, 4},
-        {9, 4},
-        {8, 4},
-        {10, 7},
-        {9, 7},
-        {8, 7},
-        {7, 7},
-        {6, 7}
+        {{0, 12}, {23, 0}},
+        {{1, 12}, {23, 1}},
+        {{0, 0}, {12, 0}},
+        {{1, 0}, {12, 1}},
+        {{2, 0}, {12, 2}},
+        {{3, 0}, {12, 3}},
+        {{4, 0}, {12, 4}},
+        {{10, 4}, {7, 0}},
+        {{9, 4}, {7, 1}},
+        {{8, 4}, {7, 2}},
+        {{10, 7}, {5, 0}},
+        {{9, 7}, {5, 1}},
+        {{8, 7}, {5, 2}},
+        {{7, 7}, {5, 3}},
+        {{6, 7}, {5, 4}}
     }}; //Red and white
 
     int selectedRow = -1;
     int selectedColumn = -1;
 
-    private Node spikes[][] = new Node[24][6];
-    private Token tokens[][] = new Token[11][13];
+    private Token[][] spikes = new Token[24][6];
+    private Token[][] tokens = new Token[11][13];
 
-    private int playerOnePoints = 167;
-    private int playerTwoPoints = 167;
+    private int playerRedPoints = 167;
+    private int playerWhitePoints = 167; //-br polja, -broj predjenih polja od pocetka table na kom si pojeo protivnika, + ovo prethodno ako si ti pojeden
+
+    private int[][] allowedFields = {{-1, -1}, {-1, -1}}; //first dice, second dice
+    private int[] allowedFieldPoints = {-1, -1};//first dice, second dice
+
+    private Board board = new Board();
 
     @FXML
     private TreeView treeView;
@@ -163,20 +169,23 @@ public class GameController implements Initializable {
         //Set color of red and white tokens
         for (int color = 0; color < 2; color++) {
             for (int i = 0; i < 15; i++) {
-                int rowIndex = STARTING_FIELDS[color][i][0];
-                int columnIndex = STARTING_FIELDS[color][i][1];
-
+                int rowIndex = STARTING_FIELDS[color][i][0][0];
+                int columnIndex = STARTING_FIELDS[color][i][0][1];
                 tokens[rowIndex][columnIndex].getCircle().setFill(Color.web(color == 0 ? FILL_RED : FILL_WHITE));
+                int rowIndexS = STARTING_FIELDS[color][i][1][0];
+                int columnIndexS = STARTING_FIELDS[color][i][1][1];
+                spikes[rowIndexS][columnIndexS] = tokens[rowIndex][columnIndex];
             }
         }
-        playerOnePoints = 167;
-        playerTwoPoints = 167;
+
+        playerRedPoints = 167;
+        playerWhitePoints = 167;
 
         dice = new Dice();
 
         nowPlayingLabel.setText(colorRed ? "Red" : "White");
-        pointsRedLabel.setText((colorRed ? playerOnePoints : playerTwoPoints) + "");
-        pointsWhiteLabel.setText((!colorRed ? playerOnePoints : playerTwoPoints) + "");
+        pointsRedLabel.setText(playerRedPoints + "");
+        pointsWhiteLabel.setText(playerWhitePoints + "");
         stageLabel.setText(STAGE[0]);
         diceOneLabel.setText(0 + "");
         diceTwoLabel.setText(0 + "");
@@ -187,9 +196,9 @@ public class GameController implements Initializable {
     @FXML
     private void handleDiceButtonAction(ActionEvent event) {
         if (stageLabel.getText().equals(STAGE[0])) {
-            
+
             dice.roll();
-            
+
             diceOneLabel.setText(dice.getDiceOneValue() + "");
             diceTwoLabel.setText(dice.getDiceTwoValue() + "");
 
@@ -210,35 +219,176 @@ public class GameController implements Initializable {
                     selectedRow = rowIndex;
                     selectedColumn = columnIndex;
                     tokens[rowIndex][columnIndex].getCircle().setStroke(Color.GREEN);
+                    calculateAllowedPositions(tokens[rowIndex][columnIndex]);
+                    for (int i = 0; i < 2; i++) {
+                        if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
+                            tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStroke(Color.GREEN);
+                        }
+                    }
                     String nextStage = stageLabel.getText().equals(STAGE[1]) ? STAGE[2] : STAGE[4];
-                    System.out.println(nextStage);
                     stageLabel.setText(nextStage);
                 }
             }
         } else if (stageLabel.getText().equals(STAGE[2]) || stageLabel.getText().equals(STAGE[4])) {
+            if (allowedFields[0][0] != -1 && allowedFields[0][1] != -1) {
+                tokens[allowedFields[0][0]][allowedFields[0][1]].getCircle().setStroke(Color.BLACK);
+            }
+            if (allowedFields[1][0] != -1 && allowedFields[1][1] != -1) {
+                tokens[allowedFields[1][0]][allowedFields[1][1]].getCircle().setStroke(Color.BLACK);
+            }
             if (rowIndex == selectedRow && columnIndex == selectedColumn) {
                 tokens[rowIndex][columnIndex].getCircle().setStroke(Color.BLACK);
                 String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[1] : STAGE[3];
-                System.out.println(nextStage);
+                allowedFields[0][0] = -1;
+                allowedFields[0][1] = -1;
+                allowedFields[1][0] = -1;
+                allowedFields[1][1] = -1;
                 stageLabel.setText(nextStage);
             } else {
-                if (clickedTokenColor.equals(FILL_BLANK)) {
+                if (isAllowedPosition(rowIndex, columnIndex)) {
+                    
+                    int oldRowSpike = board.getRowTokenToSpike(selectedRow, selectedColumn);
+                    int oldColumnSpike = board.getColumnTokenToSpike(selectedRow, selectedColumn);
+
+                    int newRowSpike = board.getRowTokenToSpike(rowIndex, columnIndex);
+                    int newColumnSpike = board.getColumnTokenToSpike(rowIndex, columnIndex);
+                    
+                    if (rowIndex == allowedFields[0][0] && columnIndex == allowedFields[0][1]) {
+                        if (currentPlayerColor.equals(FILL_RED)) {
+                            playerRedPoints -= allowedFieldPoints[0];
+                        } else {
+                            playerWhitePoints -= allowedFieldPoints[0];
+                        }
+                        if(spikes[newRowSpike][newColumnSpike] != null) {
+                            if (currentPlayerColor.equals(FILL_RED)) {
+                                playerWhitePoints +=allowedFieldPoints[0];
+                                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText())+1) + "");
+                            } else {
+                                playerRedPoints +=allowedFieldPoints[0];
+                                redBarLabel.setText((Integer.parseInt(redBarLabel.getText())+1) + "");
+                            }
+                        }
+                        dice.setDiceOneUsed(true);
+                    } else {
+                        if (currentPlayerColor.equals(FILL_RED)) {
+                            playerRedPoints -= allowedFieldPoints[1];
+                        } else {
+                            playerWhitePoints -= allowedFieldPoints[1];
+                        }
+                        if(spikes[newRowSpike][newColumnSpike] != null) {
+                            if (currentPlayerColor.equals(FILL_RED)) {
+                                playerWhitePoints +=allowedFieldPoints[1];
+                                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText())+1) + "");
+                            } else {
+                                playerRedPoints +=allowedFieldPoints[1];
+                                redBarLabel.setText((Integer.parseInt(redBarLabel.getText())+1) + "");
+                            }
+                        }
+                        dice.setDiceTwoUsed(true);
+                    }
                     tokens[selectedRow][selectedColumn].getCircle().setStroke(Color.BLACK);
                     tokens[selectedRow][selectedColumn].getCircle().setFill(Color.web(FILL_BLANK));
                     tokens[rowIndex][columnIndex].getCircle().setFill(Color.web(currentPlayerColor));
+                    
+                    spikes[oldRowSpike][oldColumnSpike] = null;
+                    spikes[newRowSpike][newColumnSpike] = tokens[rowIndex][columnIndex];
+                    
                     String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[3] : STAGE[0];
                     if (nextStage.equals(STAGE[0])) {
                         nowPlayingLabel.setText(currentPlayerColor.equals(FILL_WHITE) ? "Red" : "White");
                     }
-                    System.out.println(nextStage);
                     stageLabel.setText(nextStage);
+                    
+                    pointsRedLabel.setText(playerRedPoints + "");
+                    pointsWhiteLabel.setText(playerWhitePoints + "");
                 }
             }
         }
+    }
+
+    private void calculateAllowedPositions(Token token) {
+        int tokenRow = GridPane.getRowIndex(token.getCircle());
+        int tokenColumn = GridPane.getColumnIndex(token.getCircle());
+
+        int spikeRow = board.getRowTokenToSpike(tokenRow, tokenColumn);
+        int spikeColumn = board.getColumnTokenToSpike(tokenRow, tokenColumn);
+
+        boolean isPlayerWhite = nowPlayingLabel.getText().equals("White");
+        if (!dice.isDiceOneUsed()) {
+            int diceOneValue = dice.getDiceOneValue();
+            int spiker = isPlayerWhite ? spikeRow - diceOneValue : spikeRow + diceOneValue;
+            if (spiker >= 0 && spiker < 24) {
+                if (spikes[spiker][0] == null) { // If empty row
+                    allowedFields[0][0] = board.getRowSpikeToToken(spiker, 0);
+                    allowedFields[0][1] = board.getColumnSpikeToToken(spiker, 0);
+                    allowedFieldPoints[0] = diceOneValue;
+                } else if (spikes[spiker][0].getCircle().getFill().toString().equals(isPlayerWhite ? FILL_RED : FILL_WHITE)
+                        && spikes[spiker][1] == null) { // If only one enemy token in a row
+                    allowedFields[0][0] = board.getRowSpikeToToken(spiker, 0);
+                    allowedFields[0][1] = board.getColumnSpikeToToken(spiker, 0);
+                    allowedFieldPoints[0] = isPlayerWhite ? 24 - spiker : spiker;
+                } else { // Check if all are friend tokens and if there is available spot
+                    int firstEmptySpikeColumn = -1;
+                    for (int i = 1; i < 5; i++) {
+                        if (spikes[spiker][i - 1].getCircle().getFill().toString().equals(isPlayerWhite ? FILL_WHITE : FILL_RED) && spikes[spiker][i] == null) {
+                            firstEmptySpikeColumn = i;
+                            break;
+                        }
+                    }
+                    if (firstEmptySpikeColumn != -1) {
+                        allowedFields[0][0] = board.getRowSpikeToToken(spiker, firstEmptySpikeColumn);
+                        allowedFields[0][1] = board.getColumnSpikeToToken(spiker, firstEmptySpikeColumn);
+                        allowedFieldPoints[0] = diceOneValue;
+                    }
+                }
+            } else {
+                //TODO: Check if all player tokens are in his quarter and if they are he can push his token out of the board
+            }
+        }
+
+        if (!dice.isDiceTwoUsed()) {
+            int diceTwoValue = dice.getDiceTwoValue();
+            int spiker = isPlayerWhite ? spikeRow - diceTwoValue : spikeRow + diceTwoValue;
+            if (spiker >= 0 && spiker < 24) {
+                if (spikes[spiker][0] == null) { // If empty row
+                    allowedFields[1][0] = board.getRowSpikeToToken(spiker, 0);
+                    allowedFields[1][1] = board.getColumnSpikeToToken(spiker, 0);
+                    allowedFieldPoints[0] = diceTwoValue;
+                } else if (spikes[spiker][0].getCircle().getFill().toString().equals(isPlayerWhite ? FILL_RED : FILL_WHITE)
+                        && spikes[spiker][1] == null) { // If only one enemy token in a row
+                    allowedFields[1][0] = board.getRowSpikeToToken(spiker, 0);
+                    allowedFields[1][1] = board.getColumnSpikeToToken(spiker, 0);
+                    allowedFieldPoints[0] = isPlayerWhite ? 24 - spiker : spiker;
+                } else { // Check if all are friend tokens and if there is available spot
+                    int firstEmptySpikeColumn = -1;
+                    for (int i = 1; i < 5; i++) {
+                        if (spikes[spiker][i - 1].getCircle().getFill().toString().equals(isPlayerWhite ? FILL_WHITE : FILL_RED) && spikes[spiker][i] == null) {
+                            firstEmptySpikeColumn = i;
+                            break;
+                        }
+                    }
+                    if (firstEmptySpikeColumn != -1) {
+                        allowedFields[1][0] = board.getRowSpikeToToken(spiker, firstEmptySpikeColumn);
+                        allowedFields[1][1] = board.getColumnSpikeToToken(spiker, firstEmptySpikeColumn);
+                        allowedFieldPoints[0] = diceTwoValue;
+                    }
+                }
+            } else {
+                //TODO: Check if all player tokens are in his quarter and if they are he can push his token out of the board
+            }
+        }
+    }
+
+    private boolean isAllowedPosition(int rowIndex, int columnIndex) {
+        return (allowedFields[0][0] == rowIndex && allowedFields[0][1] == columnIndex) || (allowedFields[1][0] == rowIndex && allowedFields[1][1] == columnIndex);
+    }
+
+    private void calculateAllowedTokens() {
 
     }
 
-    private void calculateAllowedPositions() {
+    private boolean isAllowedToken() {
+        return false;
     }
 
 }
