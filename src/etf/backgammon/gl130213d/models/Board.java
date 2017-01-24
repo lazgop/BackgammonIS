@@ -185,25 +185,20 @@ public class Board {
         int allFieldsRow = isFirst ? 0 : 1;
         if (spiker >= 0 && spiker < 24) {
             if (spikes[spiker][0] == null) { // If empty row
-                System.out.println("row empty" + spiker);
+                
                 allowedFields[allFieldsRow][0] = getRowSpikeToToken(spiker, 0);
                 allowedFields[allFieldsRow][1] = getColumnSpikeToToken(spiker, 0);
                 allowedFieldPoints[allFieldsRow] = diceValue;
             } else if (spikes[spiker][0].getCircle().getFill().toString().equals(currentPlayerColor) == false
                     && spikes[spiker][1] == null) { // If only one enemy token in a row
-                
-                
-                System.out.println("only one enemy " + spiker + "color " + spikes[spiker][0].getCircle().getFill().toString() + " playerColor" + currentPlayerColor);
                 allowedFields[allFieldsRow][0] = getRowSpikeToToken(spiker, 0);
                 allowedFields[allFieldsRow][1] = getColumnSpikeToToken(spiker, 0);
                 allowedFieldPoints[allFieldsRow] = isCurrentPlayerWhite ? 24 - spiker : spiker;
             } else { // Check if all are friend tokens and if there is available spot
-                System.out.println("check if there is a free field on top of friends" + spiker);
                 int firstEmptySpikeColumn = 0;
                 while (spikes[spiker][firstEmptySpikeColumn] != null 
                         && spikes[spiker][firstEmptySpikeColumn].getCircle().getFill().toString().equals(currentPlayerColor)
                         && firstEmptySpikeColumn != 5) {
-                    System.out.println("boja1 : " + spiker + " " + firstEmptySpikeColumn + " " + spikes[spiker][firstEmptySpikeColumn].getCircle().getFill().toString() + " boja2 " + currentPlayerColor);
                     firstEmptySpikeColumn++;
                 }
                 
