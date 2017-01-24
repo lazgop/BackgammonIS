@@ -42,6 +42,9 @@ public class GameController implements Initializable {
     public static String FILL_BLANK = "0x11111100";
     public static String FILL_WHITE = "0xffffffff";
     public static String FILL_RED = "0xff0000ff";
+    
+    public static double STROKE_NONE = 0;
+    public static double STROKE_FULL = 1;
 
     private boolean colorRed;
     private boolean enemyComputer;
@@ -158,6 +161,7 @@ public class GameController implements Initializable {
 
                 if (!((columnIndex == 6 && rowIndex == 4) || (columnIndex == 6 && rowIndex == 6))) { //Don't change color of bar tokens
                     ((Circle) element).setFill(Color.web(FILL_BLANK));
+                    ((Circle) element).setStrokeWidth(STROKE_NONE);
                     tokens[rowIndex][columnIndex] = new Token((Circle) element);
                     //Set onClick listeners
                     element.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
@@ -213,6 +217,7 @@ public class GameController implements Initializable {
                 for (int i = 0; i < 2; i++) {
                     if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
                         tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStroke(Color.GREEN);
+                        tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStrokeWidth(STROKE_FULL);
                     }
                 }
                 stageLabel.setText(STAGE[2]);
@@ -242,10 +247,12 @@ public class GameController implements Initializable {
                     selectedRow = rowIndex;
                     selectedColumn = columnIndex;
                     tokens[rowIndex][columnIndex].getCircle().setStroke(Color.GREEN);
+                    tokens[rowIndex][columnIndex].getCircle().setStrokeWidth(STROKE_FULL);
                     calculateAllowedPositions(tokens[rowIndex][columnIndex], isCurrentPlayerWhite);
                     for (int i = 0; i < 2; i++) {
                         if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
                             tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStroke(Color.GREEN);
+                            tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStrokeWidth(STROKE_FULL);
                         }
                     }
                     String nextStage = stageLabel.getText().equals(STAGE[1]) ? STAGE[2] : STAGE[4];
@@ -255,12 +262,14 @@ public class GameController implements Initializable {
                 //TODO: add calculateAllowedTokens in the end
                 if (rowIndex == selectedRow && columnIndex == selectedColumn) {
                     tokens[rowIndex][columnIndex].getCircle().setStroke(Color.BLACK);
+                    tokens[rowIndex][columnIndex].getCircle().setStrokeWidth(STROKE_NONE);
                     String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[1] : STAGE[3];
                     stageLabel.setText(nextStage);
 
                     for (int i = 0; i < 2; i++) {
                         if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
                             tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStroke(Color.BLACK);
+                            tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStrokeWidth(STROKE_NONE);
                         }
                     }
                     for (int i = 0; i < 2; i++) {
@@ -314,6 +323,7 @@ public class GameController implements Initializable {
                     }
                     if (selectedRow != -1 && selectedColumn != -1) {
                         tokens[selectedRow][selectedColumn].getCircle().setStroke(Color.BLACK);
+                        tokens[selectedRow][selectedColumn].getCircle().setStrokeWidth(STROKE_NONE);
                         tokens[selectedRow][selectedColumn].getCircle().setFill(Color.web(FILL_BLANK));
                         spikes[oldRowSpike][oldColumnSpike] = null;
                     } else {
@@ -324,6 +334,7 @@ public class GameController implements Initializable {
                         }
                     }
                     tokens[rowIndex][columnIndex].getCircle().setFill(Color.web(isCurrentPlayerWhite ? FILL_WHITE : FILL_RED));
+                    tokens[rowIndex][columnIndex].getCircle().setStrokeWidth(STROKE_NONE);
                     spikes[newRowSpike][newColumnSpike] = tokens[rowIndex][columnIndex];
 
                     String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[3] : STAGE[0];
@@ -333,6 +344,7 @@ public class GameController implements Initializable {
                     for (int i = 0; i < 2; i++) {
                         if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
                             tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStroke(Color.BLACK);
+                            tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStrokeWidth(STROKE_NONE);
                         }
                     }
 
@@ -341,6 +353,7 @@ public class GameController implements Initializable {
                         for (int i = 0; i < 2; i++) {
                             if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
                                 tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStroke(Color.GREEN);
+                                tokens[allowedFields[i][0]][allowedFields[i][1]].getCircle().setStrokeWidth(STROKE_FULL);
                             }
                         }
                         nextStage = STAGE[4];
