@@ -36,7 +36,8 @@ public class GameController implements Initializable {
         "Select first token",
         "Select the field where to move selected token",
         "Select second token",
-        "Select the field where to move the second token"
+        "Select the field where to move the second token",
+        "Game Over"
     };
 
     public static String FILL_BLANK = "0x11111100";
@@ -259,7 +260,7 @@ public class GameController implements Initializable {
                     stageLabel.setText(nextStage);
                 }
             } else if (stageLabel.getText().equals(STAGE[2]) || stageLabel.getText().equals(STAGE[4])) {
-                //TODO: add calculateAllowedTokens in the end
+
                 if (rowIndex == selectedRow && columnIndex == selectedColumn) {
                     tokens[rowIndex][columnIndex].getCircle().setStroke(Color.BLACK);
                     tokens[rowIndex][columnIndex].getCircle().setStrokeWidth(STROKE_NONE);
@@ -377,6 +378,10 @@ public class GameController implements Initializable {
 
                     selectedRow = -1;
                     selectedColumn = -1;
+
+                    if (isCurrentPlayerWinner()) {
+                        stageLabel.setText(STAGE[5] + (isCurrentPlayerWhite ? ": White Won" : ": Red Won") + " - HOMEBOARD");
+                    }
                 }
             }
         }
@@ -461,6 +466,23 @@ public class GameController implements Initializable {
 
     private void cleanUp() {
 
+    }
+
+    private boolean isCurrentPlayerWinner() {
+        int start = isCurrentPlayerWhite ? 18 : 0;
+        int end = isCurrentPlayerWhite ? 24 : 6;
+
+        int counter = 0;
+        for (int i = start; i < end; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (spikes[i][j] != null && spikes[i][j].getCircle().getFill().toString().equals(isCurrentPlayerWhite ? FILL_WHITE : FILL_RED)) {
+                    counter++;
+                } else {
+                    break;
+                }
+            }
+        }
+        return counter == 15;
     }
 
 }
