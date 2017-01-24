@@ -10,23 +10,20 @@ import etf.backgammon.gl130213d.models.Dice;
 import etf.backgammon.gl130213d.models.Token;
 import etf.backgammon.gl130213d.wrappers.SceneWrapper;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
-import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
-import javafx.stage.Stage;
 
 /**
  * FXML Controller class
@@ -98,6 +95,8 @@ public class GameController implements Initializable {
 
     private int[][] allowedFields = {{-1, -1}, {-1, -1}}; //first dice, second dice
     private int[] allowedFieldPoints = {-1, -1};//first dice, second dice
+
+    private ArrayList<Token> allowedTokens = new ArrayList<>();
 
     private Board board = new Board();
 
@@ -202,7 +201,21 @@ public class GameController implements Initializable {
             diceOneLabel.setText(dice.getDiceOneValue() + "");
             diceTwoLabel.setText(dice.getDiceTwoValue() + "");
 
-            stageLabel.setText(STAGE[1]);
+            //TODO: Test if there are tokens in bar and goto other stage if there is
+            calculateAllowedTokens();
+            if (allowedTokens.isEmpty()) {
+                if (nowPlayingLabel.getText().equals("Red") && Integer.parseInt(redBarLabel.getText()) > 0
+                        || nowPlayingLabel.getText().equals("White") && Integer.parseInt(whiteBarLabel.getText()) > 0) {
+                    calculateAllowedPositions(null);
+                    selectedRow = -1;
+                    selectedColumn = -1;
+                    stageLabel.setText(STAGE[2]);
+                } else {
+                    //TODO: Add skip button if no possible moves/ end the game
+                }
+            } else {
+                stageLabel.setText(STAGE[1]);
+            }
         }
     }
 
@@ -213,9 +226,10 @@ public class GameController implements Initializable {
         String currentPlayerColor = nowPlayingLabel.getText().equals("White") ? FILL_WHITE : FILL_RED;
         String clickedTokenColor = ((Circle) element).getFill().toString();
 
+        //Always if currentColor has tokens on the bar force them to use those tokens
         if (stageLabel.getText().equals(STAGE[1]) || stageLabel.getText().equals(STAGE[3])) {
             if (tokens[rowIndex][columnIndex] != null) {
-                if (clickedTokenColor.equals(currentPlayerColor)) {
+                if (isAllowedToken(tokens[rowIndex][columnIndex])) {
                     selectedRow = rowIndex;
                     selectedColumn = columnIndex;
                     tokens[rowIndex][columnIndex].getCircle().setStroke(Color.GREEN);
@@ -246,26 +260,28 @@ public class GameController implements Initializable {
                 stageLabel.setText(nextStage);
             } else {
                 if (isAllowedPosition(rowIndex, columnIndex)) {
-                    
-                    int oldRowSpike = board.getRowTokenToSpike(selectedRow, selectedColumn);
-                    int oldColumnSpike = board.getColumnTokenToSpike(selectedRow, selectedColumn);
-
+                    int oldRowSpike = -1;
+                    int oldColumnSpike = -1;
+                    if (selectedRow != -1 && selectedColumn != -1) {
+                        oldRowSpike = board.getRowTokenToSpike(selectedRow, selectedColumn);
+                        oldColumnSpike = board.getColumnTokenToSpike(selectedRow, selectedColumn);
+                    }
                     int newRowSpike = board.getRowTokenToSpike(rowIndex, columnIndex);
                     int newColumnSpike = board.getColumnTokenToSpike(rowIndex, columnIndex);
-                    
+
                     if (rowIndex == allowedFields[0][0] && columnIndex == allowedFields[0][1]) {
                         if (currentPlayerColor.equals(FILL_RED)) {
                             playerRedPoints -= allowedFieldPoints[0];
                         } else {
                             playerWhitePoints -= allowedFieldPoints[0];
                         }
-                        if(spikes[newRowSpike][newColumnSpike] != null) {
+                        if (spikes[newRowSpike][newColumnSpike] != null) {
                             if (currentPlayerColor.equals(FILL_RED)) {
-                                playerWhitePoints +=allowedFieldPoints[0];
-                                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText())+1) + "");
+                                playerWhitePoints += allowedFieldPoints[0];
+                                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText()) + 1) + "");
                             } else {
-                                playerRedPoints +=allowedFieldPoints[0];
-                                redBarLabel.setText((Integer.parseInt(redBarLabel.getText())+1) + "");
+                                playerRedPoints += allowedFieldPoints[0];
+                                redBarLabel.setText((Integer.parseInt(redBarLabel.getText()) + 1) + "");
                             }
                         }
                         dice.setDiceOneUsed(true);
@@ -275,30 +291,53 @@ public class GameController implements Initializable {
                         } else {
                             playerWhitePoints -= allowedFieldPoints[1];
                         }
-                        if(spikes[newRowSpike][newColumnSpike] != null) {
+                        if (spikes[newRowSpike][newColumnSpike] != null) {
                             if (currentPlayerColor.equals(FILL_RED)) {
-                                playerWhitePoints +=allowedFieldPoints[1];
-                                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText())+1) + "");
+                                playerWhitePoints += allowedFieldPoints[1];
+                                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText()) + 1) + "");
                             } else {
-                                playerRedPoints +=allowedFieldPoints[1];
-                                redBarLabel.setText((Integer.parseInt(redBarLabel.getText())+1) + "");
+                                playerRedPoints += allowedFieldPoints[1];
+                                redBarLabel.setText((Integer.parseInt(redBarLabel.getText()) + 1) + "");
                             }
                         }
                         dice.setDiceTwoUsed(true);
                     }
-                    tokens[selectedRow][selectedColumn].getCircle().setStroke(Color.BLACK);
-                    tokens[selectedRow][selectedColumn].getCircle().setFill(Color.web(FILL_BLANK));
+                    if (selectedRow != -1 && selectedColumn != -1) {
+                        tokens[selectedRow][selectedColumn].getCircle().setStroke(Color.BLACK);
+                        tokens[selectedRow][selectedColumn].getCircle().setFill(Color.web(FILL_BLANK));
+                        spikes[oldRowSpike][oldColumnSpike] = null;
+                    } else {
+                        if (currentPlayerColor.equals(FILL_WHITE)) {
+                            whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText()) - 1) + "");
+                        } else {
+                            redBarLabel.setText((Integer.parseInt(redBarLabel.getText()) - 1) + "");
+                        }
+                    }
                     tokens[rowIndex][columnIndex].getCircle().setFill(Color.web(currentPlayerColor));
-                    
-                    spikes[oldRowSpike][oldColumnSpike] = null;
                     spikes[newRowSpike][newColumnSpike] = tokens[rowIndex][columnIndex];
-                    
+
                     String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[3] : STAGE[0];
+                    
+                    if (stageLabel.getText().equals(STAGE[2])) {
+                        calculateAllowedTokens();
+                        if (allowedTokens.isEmpty()) {
+                            if (nowPlayingLabel.getText().equals("Red") && Integer.parseInt(redBarLabel.getText()) > 0
+                                    || nowPlayingLabel.getText().equals("White") && Integer.parseInt(whiteBarLabel.getText()) > 0) {
+                                calculateAllowedPositions(null);
+                                selectedRow = -1;
+                                selectedColumn = -1;
+                                nextStage = STAGE[4];
+                            } else {
+                                //TODO: Add skip button if no possible moves/ end the game
+                            }
+                        }
+                    }
+                    
                     if (nextStage.equals(STAGE[0])) {
                         nowPlayingLabel.setText(currentPlayerColor.equals(FILL_WHITE) ? "Red" : "White");
                     }
                     stageLabel.setText(nextStage);
-                    
+
                     pointsRedLabel.setText(playerRedPoints + "");
                     pointsWhiteLabel.setText(playerWhitePoints + "");
                 }
@@ -307,13 +346,19 @@ public class GameController implements Initializable {
     }
 
     private void calculateAllowedPositions(Token token) {
-        int tokenRow = GridPane.getRowIndex(token.getCircle());
-        int tokenColumn = GridPane.getColumnIndex(token.getCircle());
-
-        int spikeRow = board.getRowTokenToSpike(tokenRow, tokenColumn);
-        int spikeColumn = board.getColumnTokenToSpike(tokenRow, tokenColumn);
-
+        int tokenRow, tokenColumn;
+        int spikeRow, spikeColumn;
         boolean isPlayerWhite = nowPlayingLabel.getText().equals("White");
+        if (token != null) {
+            tokenRow = GridPane.getRowIndex(token.getCircle());
+            tokenColumn = GridPane.getColumnIndex(token.getCircle());
+
+            spikeRow = board.getRowTokenToSpike(tokenRow, tokenColumn);
+            spikeColumn = board.getColumnTokenToSpike(tokenRow, tokenColumn);
+        } else {
+            spikeRow = isPlayerWhite ? 24 : -1;
+        }
+
         if (!dice.isDiceOneUsed()) {
             int diceOneValue = dice.getDiceOneValue();
             int spiker = isPlayerWhite ? spikeRow - diceOneValue : spikeRow + diceOneValue;
@@ -354,7 +399,7 @@ public class GameController implements Initializable {
                     allowedFields[1][0] = board.getRowSpikeToToken(spiker, 0);
                     allowedFields[1][1] = board.getColumnSpikeToToken(spiker, 0);
                     allowedFieldPoints[1] = diceTwoValue;
-                    
+
                 } else if (spikes[spiker][0].getCircle().getFill().toString().equals(isPlayerWhite ? FILL_RED : FILL_WHITE)
                         && spikes[spiker][1] == null) { // If only one enemy token in a row
                     allowedFields[1][0] = board.getRowSpikeToToken(spiker, 0);
@@ -385,11 +430,47 @@ public class GameController implements Initializable {
     }
 
     private void calculateAllowedTokens() {
+        boolean currentPlayerRed = nowPlayingLabel.getText().equals("Red");
+        allowedTokens.clear();
+        if (currentPlayerRed && Integer.parseInt(redBarLabel.getText()) != 0) {
+
+        } else if (!currentPlayerRed && Integer.parseInt(whiteBarLabel.getText()) != 0) {
+
+        } else {
+            for (int i = 0; i < 24; i++) {
+
+                if (spikes[i][0] == null) {
+                    continue;
+                }
+
+                if (spikes[i][4] != null) {
+                    if (currentPlayerRed && spikes[i][4].getCircle().getFill().toString().equals(FILL_RED)
+                            || !currentPlayerRed && spikes[i][4].getCircle().getFill().toString().equals(FILL_WHITE)) {
+                        allowedTokens.add(spikes[i][4]);
+                        continue;
+                    }
+                }
+
+                for (int j = 0; j < 4; j++) {
+                    if (spikes[i][j] != null && spikes[i][j + 1] == null) {
+                        if (currentPlayerRed && spikes[i][j].getCircle().getFill().toString().equals(FILL_RED)
+                                || !currentPlayerRed && spikes[i][j].getCircle().getFill().toString().equals(FILL_WHITE)) {
+                            allowedTokens.add(spikes[i][j]);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        System.out.println("lista:");
+        for (int i=0; i<allowedTokens.size(); i++ ){
+            System.out.println(GridPane.getRowIndex(allowedTokens.get(i).getCircle()) +  " " + GridPane.getColumnIndex(allowedTokens.get(i).getCircle()));
+        }
 
     }
 
-    private boolean isAllowedToken() {
-        return false;
+    private boolean isAllowedToken(Token token) {
+        return allowedTokens.contains(token);
     }
 
 }
