@@ -42,7 +42,7 @@ public class GameController implements Initializable {
     public static String FILL_BLANK = "0x11111100";
     public static String FILL_WHITE = "0xffffffff";
     public static String FILL_RED = "0xff0000ff";
-    
+
     public static double STROKE_NONE = 0;
     public static double STROKE_FULL = 1;
 
@@ -359,8 +359,10 @@ public class GameController implements Initializable {
                         nextStage = STAGE[4];
                     } else {
                         if (nextStage.equals(STAGE[0])) {
-                            nowPlayingLabel.setText(isCurrentPlayerWhite ? "Red" : "White");
-                            isCurrentPlayerWhite = !isCurrentPlayerWhite;
+                            if (dice.getDiceOneValue() != dice.getDiceTwoValue()) {
+                                nowPlayingLabel.setText(isCurrentPlayerWhite ? "Red" : "White");
+                                isCurrentPlayerWhite = !isCurrentPlayerWhite;
+                            }
                         }
                         for (int i = 0; i < 2; i++) {
                             allowedFields[i][0] = -1;
