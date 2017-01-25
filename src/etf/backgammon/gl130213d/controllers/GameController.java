@@ -140,19 +140,26 @@ public class GameController implements Initializable {
 
     @FXML
     private void handleSetUpButtonAction(ActionEvent event) {
-        SceneWrapper scene = null;
-        if (setUpButton.getScene() instanceof SceneWrapper) {
-            scene = (SceneWrapper) setUpButton.getScene();
-        } else {
-            System.out.println("ERROR");
-            return;
+        if (setUpButton.getText().equals("Start Game")){
+            SceneWrapper scene = null;
+            if (setUpButton.getScene() instanceof SceneWrapper) {
+                scene = (SceneWrapper) setUpButton.getScene();
+            } else {
+                System.out.println("ERROR");
+                return;
+            }
+
+            colorRed = scene.isColorRed();
+            enemyComputer = scene.isEnemyComputer();
+            matchPoints = Integer.parseInt(scene.getMatchPoints());
+            treeDepth = scene.getTreeDepth();
         }
-
-        colorRed = scene.isColorRed();
-        enemyComputer = scene.isEnemyComputer();
-        matchPoints = Integer.parseInt(scene.getMatchPoints());
-        treeDepth = scene.getTreeDepth();
-
+        
+        setupBoard();
+    }
+    
+    
+    public void setupBoard(){
         board = new Board();
         for (Node element : boardGrid.getChildren()) {
             //Set initial colors of all tokens to
@@ -165,12 +172,15 @@ public class GameController implements Initializable {
                     ((Circle) element).setStrokeWidth(STROKE_NONE);
                     tokens[rowIndex][columnIndex] = new Token((Circle) element);
                     //Set onClick listeners
-                    element.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                        @Override
-                        public void handle(MouseEvent event) {
-                            handleTokenClick(event, element);
-                        }
-                    });
+                    
+                    if (setUpButton.getText().equals("Start Game")) {
+                        element.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                            @Override
+                            public void handle(MouseEvent event) {
+                                handleTokenClick(event, element);
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -199,10 +209,13 @@ public class GameController implements Initializable {
         stageLabel.setText(STAGE[0]);
         diceOneLabel.setText(0 + "");
         diceTwoLabel.setText(0 + "");
+        
+        redBarLabel.setText("0");
+        whiteBarLabel.setText("0");
 
         setUpButton.setText("Restart game");
     }
-
+    
     @FXML
     private void handleDiceButtonAction(ActionEvent event) {
         if (stageLabel.getText().equals(STAGE[0])) {
@@ -235,6 +248,8 @@ public class GameController implements Initializable {
         return (!isCurrentPlayerWhite && Integer.parseInt(redBarLabel.getText()) > 0)
                 || (isCurrentPlayerWhite && Integer.parseInt(whiteBarLabel.getText()) > 0);
     }
+    
+    
 
     private void handleTokenClick(MouseEvent event, Node element) {
         if (element instanceof Circle) {
