@@ -208,8 +208,8 @@ public class GameController implements Initializable {
 
         dice = new Dice();
 
-        nowPlayingLabel.setText(colorRed ? "Red" : "White");
-        isCurrentPlayerWhite = !colorRed;
+        nowPlayingLabel.setText((colorRed && !enemyComputer) ? "Red" : "White");
+        isCurrentPlayerWhite = !(colorRed && !enemyComputer);
         pointsRedLabel.setText(playerRedPoints + "");
         pointsWhiteLabel.setText(playerWhitePoints + "");
         stageLabel.setText(STAGE[0]);

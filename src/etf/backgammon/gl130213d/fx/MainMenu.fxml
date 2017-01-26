@@ -6,15 +6,21 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
 
 <AnchorPane id="AnchorPane" prefHeight="483.0" prefWidth="693.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="etf.backgammon.gl130213d.controllers.MainMenuController">
     <children>
-        <Label layoutX="63.0" layoutY="180.0" minHeight="16" minWidth="69" text="Number of match points:" />
-      <CheckBox fx:id="enemyCheckbox" layoutX="227.0" layoutY="102.0" mnemonicParsing="false" text="vs computer" />
-      <CheckBox id="color" fx:id="colorCheckbox" layoutX="227.0" layoutY="137.0" mnemonicParsing="false" text="red (unchecked is white)" />
-      <Slider id="treeDepth" fx:id="treeDepthSlider" layoutX="227.0" layoutY="222.0" majorTickUnit="1.0" max="10.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" snapToTicks="true" />
+        <Label layoutX="106.0" layoutY="180.0" minHeight="16" minWidth="69" text="Number of match points:" />
+      <CheckBox fx:id="enemyCheckbox" layoutX="272.0" layoutY="110.0" mnemonicParsing="false" text="vs computer" />
+      <CheckBox id="color" fx:id="colorCheckbox" layoutX="272.0" layoutY="142.0" mnemonicParsing="false" text="red (unchecked is white)" />
+      <Slider id="treeDepth" fx:id="treeDepthSlider" layoutX="277.0" layoutY="220.0" majorTickUnit="1.0" max="10.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" snapToTicks="true" />
       <Label layoutX="144.0" layoutY="222.0" minHeight="16" minWidth="69" text="Tree depth:" />
-      <Button fx:id="startButton" layoutX="254.0" layoutY="293.0" mnemonicParsing="false" onAction="#handleStartButtonAction" text="Start" />
-      <ChoiceBox fx:id="matchPointsChoiceBox" layoutX="222.0" layoutY="175.0" prefWidth="150.0" />
+      <Button fx:id="startButton" layoutX="323.0" layoutY="292.0" mnemonicParsing="false" onAction="#handleStartButtonAction" text="Start" />
+      <ChoiceBox fx:id="matchPointsChoiceBox" layoutX="272.0" layoutY="175.0" prefWidth="150.0" />
+      <Label layoutX="210.0" layoutY="14.0" prefHeight="81.0" prefWidth="300.0" text="Backgammon">
+         <font>
+            <Font name="Andale Mono" size="48.0" />
+         </font>
+      </Label>
     </children>
 </AnchorPane>
