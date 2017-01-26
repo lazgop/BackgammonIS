@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -22,6 +23,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
@@ -112,7 +114,7 @@ public class GameController implements Initializable {
     private boolean isCurrentPlayerWhite;
 
     @FXML
-    private TreeView treeView;
+    private TreeView<String> treeView;
     @FXML
     private Button diceButton;
     @FXML
@@ -159,7 +161,7 @@ public class GameController implements Initializable {
             matchPoints = Integer.parseInt(scene.getMatchPoints());
             treeDepth = scene.getTreeDepth();
         }
-
+        
         setupBoard();
     }
 
@@ -229,7 +231,7 @@ public class GameController implements Initializable {
             diceOneLabel.setText(dice.getDiceOneValue() + "");
             diceTwoLabel.setText(dice.getDiceTwoValue() + "");
 
-            //TODO: Test if there are tokens in bar and goto other stage if there is
+            //Test if there are tokens in bar and goto other stage if there is
             if (areThereTokensInBar()) {
                 calculateAllowedPositions(null, isCurrentPlayerWhite);
                 for (int i = 0; i < 2; i++) {
@@ -416,12 +418,13 @@ public class GameController implements Initializable {
         diceTwoLabel.setText(dice.getDiceTwoValue() + "");
 
 
-
+        
         for (int i = 0; i < 2; i++) {
             Field[] fields = expectiMinimax(treeDepth, dice);
             if (fields == null) {
                 break;
             }
+            
             String[][] currentState = tokenArrayToStringArray(spikes);
             if ("".equals(currentState[fields[1].spikeRowIndex][fields[1].spikeColumnIndex])) {
                 if (fields[0] != null) {
@@ -610,18 +613,23 @@ public class GameController implements Initializable {
             diceValues = new int[1];
             diceValues[0] = 1000;
         }
-
+        TreeItem<String> rootItem = new TreeItem<String> ("Root");
+        treeView.setRoot(rootItem);
+        rootItem.setExpanded(true);
+        
         if (currentAllowedTokens == null) {
             ArrayList<Field> allowedFields = getAllowedFields(currentState, null, diceValues);
             for (Field allowedField : allowedFields) {
                 String[][] newState = copyStrArr(currentState);
                 newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
+                TreeItem<String> treeItem = new TreeItem<>("smth");
                 double val = 0;
                 if (depth > 0) {
-                    val = expectiMMforField(allowedField, 1, depth, newState);
+                    val = expectiMMforField(allowedField, 1, depth, newState, treeItem);
                 }
                 val -= allowedField.spikeRowIndex;
-                
+                treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex); 
+                rootItem.getChildren().add(treeItem);
                 if (val < min) {
                     min = val;
                     returnFields = new Field[2];
@@ -636,15 +644,18 @@ public class GameController implements Initializable {
                     String[][] newState = copyStrArr(currentState);
                     newState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex] = "";
                     newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
+                    TreeItem<String> treeItem = new TreeItem<>("smth");
                     double val = 0;
                     if (depth > 0) {
-                        val = expectiMMforField(allowedField, 1, depth, newState);
+                        val = expectiMMforField(allowedField, 1, depth, newState, treeItem);
                     }
                     if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
                         val -= allowedField.spikeRowIndex - spikeCoordinate.spikeRowIndex;
                     } else {
                         val -= allowedField.spikeRowIndex;
                     }
+                    treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex);
+                    rootItem.getChildren().add(treeItem);
                     if (val < min) {
                         min = val;
                         returnFields = new Field[2];
@@ -652,19 +663,22 @@ public class GameController implements Initializable {
                         returnFields[1] = allowedField;
                     }
                 }
-
             }
         }
-
+        
+        System.out.println(rootItem.getChildren().toString());
+        
         return returnFields;
     }
 
-    public double expectiMMforField(Field f, int curDepth, int maxDepth, String[][] currentState) {
+    public double expectiMMforField(Field f, int curDepth, int maxDepth, String[][] currentState, TreeItem<String> rootItem) {
         double value = 0;
         if (curDepth == maxDepth) {
             if (maxDepth % 2 == 1) {
+                rootItem.getChildren().add(new TreeItem<>("MAX: value = " + f.spikeRowIndex + " row: " + f.spikeRowIndex + " col: " + f.spikeColumnIndex));
                 return f.spikeRowIndex;
             } else {
+                rootItem.getChildren().add(new TreeItem<>("MIN: value = " + (24 - f.spikeRowIndex) + " row: " + f.spikeRowIndex + " col: " + f.spikeColumnIndex));
                 return 24 - f.spikeRowIndex;
             }
         }
@@ -679,12 +693,16 @@ public class GameController implements Initializable {
                 String[][] newState = copyStrArr(currentState);
                 newState[f.spikeRowIndex][f.spikeColumnIndex] = "";
                 newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "w";
-                double val = expectiMMforField(allowedField, curDepth + 1, maxDepth, newState);
+                TreeItem<String> treeItem = new TreeItem<>("smth1");
+                double val = expectiMMforField(allowedField, curDepth + 1, maxDepth, newState, treeItem);
                 if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
                     val += f.spikeRowIndex - allowedField.spikeRowIndex;
                 } else {
                     val += allowedField.spikeRowIndex;
                 }
+                treeItem.setValue("MAX: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex); 
+                rootItem.getChildren().add(treeItem);
+                
                 if (val > max) {
                     max = val;
                 }
@@ -702,12 +720,15 @@ public class GameController implements Initializable {
                 String[][] newState = copyStrArr(currentState);
                 newState[f.spikeRowIndex][f.spikeColumnIndex] = "";
                 newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
-                double val = expectiMMforField(allowedField, curDepth + 1, maxDepth, newState);
+                TreeItem<String> treeItem = new TreeItem<>("smth");
+                double val = expectiMMforField(allowedField, curDepth + 1, maxDepth, newState, treeItem);
                 if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
                     val -= allowedField.spikeRowIndex - f.spikeRowIndex;
                 } else {
                     val -= allowedField.spikeRowIndex;
                 }
+                treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex); 
+                rootItem.getChildren().add(treeItem);
                 if (val < min) {
                     min = val;
                 }
