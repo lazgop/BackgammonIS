@@ -296,7 +296,7 @@ public class GameController implements Initializable {
                     }
                     selectedRow = -1;
                     selectedColumn = -1;
-                } else {
+                } else if (isAllowedPosition(rowIndex, columnIndex)) {
                     int oldRowSpike = -1;
                     int oldColumnSpike = -1;
                     if (selectedRow != -1 && selectedColumn != -1) {
@@ -322,7 +322,7 @@ public class GameController implements Initializable {
                             }
                         }
                         dice.setDiceOneUsed(true);
-                    } else {
+                    } else if (rowIndex == allowedFields[1][0] && columnIndex == allowedFields[1][1]){
                         if (!isCurrentPlayerWhite) {
                             playerRedPoints -= allowedFieldPoints[1];
                         } else {
@@ -414,9 +414,9 @@ public class GameController implements Initializable {
 
         diceOneLabel.setText(dice.getDiceOneValue() + "");
         diceTwoLabel.setText(dice.getDiceTwoValue() + "");
-        
-        System.out.println("DICES COMPUTER: " + dice.getDiceOneValue() + " " + dice.getDiceTwoValue());
-        
+
+
+
         for (int i = 0; i < 2; i++) {
             Field[] fields = expectiMinimax(treeDepth, dice);
             if (fields == null) {
@@ -424,45 +424,39 @@ public class GameController implements Initializable {
             }
             String[][] currentState = tokenArrayToStringArray(spikes);
             if ("".equals(currentState[fields[1].spikeRowIndex][fields[1].spikeColumnIndex])) {
-                playerRedPoints -= fields[1].spikeRowIndex - fields[0].spikeRowIndex;
+                if (fields[0] != null) {
+                    playerRedPoints -= fields[1].spikeRowIndex - fields[0].spikeRowIndex;
+                } else {
+                    playerRedPoints -= fields[1].spikeRowIndex;   
+                }
             } else {
                 playerRedPoints -= fields[1].spikeRowIndex;
                 playerWhitePoints += fields[1].spikeRowIndex;
                 pointsWhiteLabel.setText(playerWhitePoints + "");
                 whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText()) + 1) + "");
             }
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException ex) {
-//                Logger.getLogger(GameController.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-            pointsRedLabel.setText(playerRedPoints + "");
 
-            int rowIndexOld = board.getRowSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
-            int columnIndexOld = board.getColumnSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
+            pointsRedLabel.setText(playerRedPoints + "");
+            if (fields[0] != null) {
+                int rowIndexOld = board.getRowSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
+                int columnIndexOld = board.getColumnSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
+
+                tokens[rowIndexOld][columnIndexOld].getCircle().setFill(Color.web(FILL_BLANK));
+                tokens[rowIndexOld][columnIndexOld].getCircle().setStrokeWidth(STROKE_NONE);
+                
+                spikes[fields[0].spikeRowIndex][fields[0].spikeColumnIndex] = null;
+            } else {
+                redBarLabel.setText((Integer.parseInt(redBarLabel.getText()) - 1) + "");
+            }
 
             int rowIndexNew = board.getRowSpikeToToken(fields[1].spikeRowIndex, fields[1].spikeColumnIndex);
             int columnIndexNew = board.getColumnSpikeToToken(fields[1].spikeRowIndex, fields[1].spikeColumnIndex);
 
-            tokens[rowIndexOld][columnIndexOld].getCircle().setFill(Color.web(FILL_BLANK));
-            tokens[rowIndexOld][columnIndexOld].getCircle().setStrokeWidth(STROKE_NONE);
-
-            spikes[fields[0].spikeRowIndex][fields[0].spikeColumnIndex] = null;
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException ex) {
-//                Logger.getLogger(GameController.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-
+          
             tokens[rowIndexNew][columnIndexNew].getCircle().setFill(Color.web(FILL_RED));
-            tokens[rowIndexNew][columnIndexNew].getCircle().setStrokeWidth(STROKE_FULL);
+            tokens[rowIndexNew][columnIndexNew].getCircle().setStrokeWidth(STROKE_NONE);
 
             spikes[fields[1].spikeRowIndex][fields[1].spikeColumnIndex] = tokens[rowIndexNew][columnIndexNew];
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException ex) {
-//                Logger.getLogger(GameController.class.getName()).log(Level.SEVERE, null, ex);
-//            }
         }
 
         if (dice.getDiceOneValue() == dice.getDiceTwoValue()) {
@@ -617,29 +611,49 @@ public class GameController implements Initializable {
             diceValues[0] = 1000;
         }
 
-        for (Field spikeCoordinate : spikeCoordinates) {
-            ArrayList<Field> allowedFields = getAllowedFields(currentState, spikeCoordinate, diceValues);
+        if (currentAllowedTokens == null) {
+            ArrayList<Field> allowedFields = getAllowedFields(currentState, null, diceValues);
             for (Field allowedField : allowedFields) {
                 String[][] newState = copyStrArr(currentState);
-                newState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex] = "";
                 newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
                 double val = 0;
                 if (depth > 0) {
                     val = expectiMMforField(allowedField, 1, depth, newState);
                 }
-                if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
-                    val -= allowedField.spikeRowIndex - spikeCoordinate.spikeRowIndex;
-                } else {
-                    val -= allowedField.spikeRowIndex;
-                }
+                val -= allowedField.spikeRowIndex;
+                
                 if (val < min) {
                     min = val;
                     returnFields = new Field[2];
-                    returnFields[0] = spikeCoordinate;
+                    returnFields[0] = null;
                     returnFields[1] = allowedField;
                 }
             }
+        } else {
+            for (Field spikeCoordinate : spikeCoordinates) {
+                ArrayList<Field> allowedFields = getAllowedFields(currentState, spikeCoordinate, diceValues);
+                for (Field allowedField : allowedFields) {
+                    String[][] newState = copyStrArr(currentState);
+                    newState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex] = "";
+                    newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
+                    double val = 0;
+                    if (depth > 0) {
+                        val = expectiMMforField(allowedField, 1, depth, newState);
+                    }
+                    if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
+                        val -= allowedField.spikeRowIndex - spikeCoordinate.spikeRowIndex;
+                    } else {
+                        val -= allowedField.spikeRowIndex;
+                    }
+                    if (val < min) {
+                        min = val;
+                        returnFields = new Field[2];
+                        returnFields[0] = spikeCoordinate;
+                        returnFields[1] = allowedField;
+                    }
+                }
 
+            }
         }
 
         return returnFields;
@@ -647,7 +661,6 @@ public class GameController implements Initializable {
 
     public double expectiMMforField(Field f, int curDepth, int maxDepth, String[][] currentState) {
         double value = 0;
-        System.out.println("curDepth" + curDepth);
         if (curDepth == maxDepth) {
             if (maxDepth % 2 == 1) {
                 return f.spikeRowIndex;
@@ -740,9 +753,22 @@ public class GameController implements Initializable {
 
     private ArrayList<Field> getAllowedFields(String[][] currentState, Field spikeCoordinate, int[] diceValues) {
         ArrayList<Field> allowedFields = new ArrayList<>();
-        boolean isCurrentRed = "r".equals(currentState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex]);
+        boolean isCurrentRed;
+        if (spikeCoordinate == null) {
+            isCurrentRed = true;
+        } else {
+            isCurrentRed = "r".equals(currentState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex]);
+        }
+
         for (int i = 0; i < diceValues.length; i++) {
-            int spikeRow = isCurrentRed ? spikeCoordinate.spikeRowIndex + diceValues[i] : spikeCoordinate.spikeRowIndex - diceValues[i];
+            int spikeRow;
+            if (spikeCoordinate == null) {
+                spikeRow = isCurrentRed ? -1 + diceValues[i] : 24 - diceValues[i];
+                System.out.println("NULL " + spikeRow);
+            } else {
+                spikeRow = isCurrentRed ? spikeCoordinate.spikeRowIndex + diceValues[i] : spikeCoordinate.spikeRowIndex - diceValues[i];
+            }
+
             if (spikeRow >= 0 && spikeRow < 24) {
                 if ("".equals(currentState[spikeRow][0])) {
                     allowedFields.add(new Field(spikeRow, 0));
