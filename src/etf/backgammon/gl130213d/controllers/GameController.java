@@ -161,7 +161,7 @@ public class GameController implements Initializable {
             matchPoints = Integer.parseInt(scene.getMatchPoints());
             treeDepth = scene.getTreeDepth();
         }
-        
+
         setupBoard();
     }
 
@@ -324,7 +324,7 @@ public class GameController implements Initializable {
                             }
                         }
                         dice.setDiceOneUsed(true);
-                    } else if (rowIndex == allowedFields[1][0] && columnIndex == allowedFields[1][1]){
+                    } else if (rowIndex == allowedFields[1][0] && columnIndex == allowedFields[1][1]) {
                         if (!isCurrentPlayerWhite) {
                             playerRedPoints -= allowedFieldPoints[1];
                         } else {
@@ -417,20 +417,18 @@ public class GameController implements Initializable {
         diceOneLabel.setText(dice.getDiceOneValue() + "");
         diceTwoLabel.setText(dice.getDiceTwoValue() + "");
 
-
-        
         for (int i = 0; i < 2; i++) {
             Field[] fields = expectiMinimax(treeDepth, dice);
             if (fields == null) {
                 break;
             }
-            
+
             String[][] currentState = tokenArrayToStringArray(spikes);
             if ("".equals(currentState[fields[1].spikeRowIndex][fields[1].spikeColumnIndex])) {
                 if (fields[0] != null) {
                     playerRedPoints -= fields[1].spikeRowIndex - fields[0].spikeRowIndex;
                 } else {
-                    playerRedPoints -= fields[1].spikeRowIndex;   
+                    playerRedPoints -= fields[1].spikeRowIndex;
                 }
             } else {
                 playerRedPoints -= fields[1].spikeRowIndex;
@@ -446,7 +444,7 @@ public class GameController implements Initializable {
 
                 tokens[rowIndexOld][columnIndexOld].getCircle().setFill(Color.web(FILL_BLANK));
                 tokens[rowIndexOld][columnIndexOld].getCircle().setStrokeWidth(STROKE_NONE);
-                
+
                 spikes[fields[0].spikeRowIndex][fields[0].spikeColumnIndex] = null;
             } else {
                 redBarLabel.setText((Integer.parseInt(redBarLabel.getText()) - 1) + "");
@@ -455,11 +453,15 @@ public class GameController implements Initializable {
             int rowIndexNew = board.getRowSpikeToToken(fields[1].spikeRowIndex, fields[1].spikeColumnIndex);
             int columnIndexNew = board.getColumnSpikeToToken(fields[1].spikeRowIndex, fields[1].spikeColumnIndex);
 
-          
             tokens[rowIndexNew][columnIndexNew].getCircle().setFill(Color.web(FILL_RED));
             tokens[rowIndexNew][columnIndexNew].getCircle().setStrokeWidth(STROKE_NONE);
 
             spikes[fields[1].spikeRowIndex][fields[1].spikeColumnIndex] = tokens[rowIndexNew][columnIndexNew];
+            if (isCurrentPlayerWinner()) {
+                stageLabel.setText(STAGE[5] + (isCurrentPlayerWhite ? ": White Won" : ": Red Won") + " - HOMEBOARD");
+                return;
+            }
+
         }
 
         if (dice.getDiceOneValue() == dice.getDiceTwoValue()) {
@@ -613,10 +615,10 @@ public class GameController implements Initializable {
             diceValues = new int[1];
             diceValues[0] = 1000;
         }
-        TreeItem<String> rootItem = new TreeItem<String> ("Root");
+        TreeItem<String> rootItem = new TreeItem<String>("Root");
         treeView.setRoot(rootItem);
         rootItem.setExpanded(true);
-        
+
         if (currentAllowedTokens == null) {
             ArrayList<Field> allowedFields = getAllowedFields(currentState, null, diceValues);
             for (Field allowedField : allowedFields) {
@@ -628,7 +630,7 @@ public class GameController implements Initializable {
                     val = expectiMMforField(allowedField, 1, depth, newState, treeItem);
                 }
                 val -= allowedField.spikeRowIndex;
-                treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex); 
+                treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex);
                 rootItem.getChildren().add(treeItem);
                 if (val < min) {
                     min = val;
@@ -665,9 +667,9 @@ public class GameController implements Initializable {
                 }
             }
         }
-        
+
         System.out.println(rootItem.getChildren().toString());
-        
+
         return returnFields;
     }
 
@@ -700,9 +702,9 @@ public class GameController implements Initializable {
                 } else {
                     val += allowedField.spikeRowIndex;
                 }
-                treeItem.setValue("MAX: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex); 
+                treeItem.setValue("MAX: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex);
                 rootItem.getChildren().add(treeItem);
-                
+
                 if (val > max) {
                     max = val;
                 }
@@ -727,7 +729,7 @@ public class GameController implements Initializable {
                 } else {
                     val -= allowedField.spikeRowIndex;
                 }
-                treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex); 
+                treeItem.setValue("MIN: value = " + val + " row: " + allowedField.spikeRowIndex + " col: " + allowedField.spikeColumnIndex);
                 rootItem.getChildren().add(treeItem);
                 if (val < min) {
                     min = val;
