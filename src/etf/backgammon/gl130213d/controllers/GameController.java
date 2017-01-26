@@ -13,6 +13,8 @@ import etf.backgammon.gl130213d.wrappers.SceneWrapper;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -412,10 +414,11 @@ public class GameController implements Initializable {
 
         diceOneLabel.setText(dice.getDiceOneValue() + "");
         diceTwoLabel.setText(dice.getDiceTwoValue() + "");
-
+        
+        System.out.println("DICES COMPUTER: " + dice.getDiceOneValue() + " " + dice.getDiceTwoValue());
+        
         for (int i = 0; i < 2; i++) {
             Field[] fields = expectiMinimax(treeDepth, dice);
-            System.out.println("fields: " + fields[0].spikeRowIndex + " " + fields[0].spikeColumnIndex + " " + fields[1].spikeRowIndex + " " + fields[1].spikeColumnIndex);
             if (fields == null) {
                 break;
             }
@@ -428,6 +431,11 @@ public class GameController implements Initializable {
                 pointsWhiteLabel.setText(playerWhitePoints + "");
                 whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText()) + 1) + "");
             }
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(GameController.class.getName()).log(Level.SEVERE, null, ex);
+//            }
             pointsRedLabel.setText(playerRedPoints + "");
 
             int rowIndexOld = board.getRowSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
@@ -440,14 +448,30 @@ public class GameController implements Initializable {
             tokens[rowIndexOld][columnIndexOld].getCircle().setStrokeWidth(STROKE_NONE);
 
             spikes[fields[0].spikeRowIndex][fields[0].spikeColumnIndex] = null;
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(GameController.class.getName()).log(Level.SEVERE, null, ex);
+//            }
 
             tokens[rowIndexNew][columnIndexNew].getCircle().setFill(Color.web(FILL_RED));
             tokens[rowIndexNew][columnIndexNew].getCircle().setStrokeWidth(STROKE_FULL);
 
             spikes[fields[1].spikeRowIndex][fields[1].spikeColumnIndex] = tokens[rowIndexNew][columnIndexNew];
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(GameController.class.getName()).log(Level.SEVERE, null, ex);
+//            }
         }
 
-        stageLabel.setText(STAGE[0]);
+        if (dice.getDiceOneValue() == dice.getDiceTwoValue()) {
+            computerPlay();
+        } else {
+            nowPlayingLabel.setText("White");
+            isCurrentPlayerWhite = true;
+            stageLabel.setText(STAGE[0]);
+        }
     }
 
     private void calculateAllowedPositions(Token token, boolean isCurrentPlayerWhite) {
@@ -558,8 +582,7 @@ public class GameController implements Initializable {
         Field[] returnFields = null; //Starting field, bestField
 
         String[][] currentState = tokenArrayToStringArray(spikes);
-        
-        
+
         ArrayList<Field> spikeCoordinates = new ArrayList<>();
         ArrayList<Token> currentAllowedTokens = calculateAllowedTokens();
         if (currentAllowedTokens == null) {
@@ -624,7 +647,7 @@ public class GameController implements Initializable {
 
     public double expectiMMforField(Field f, int curDepth, int maxDepth, String[][] currentState) {
         double value = 0;
-
+        System.out.println("curDepth" + curDepth);
         if (curDepth == maxDepth) {
             if (maxDepth % 2 == 1) {
                 return f.spikeRowIndex;
