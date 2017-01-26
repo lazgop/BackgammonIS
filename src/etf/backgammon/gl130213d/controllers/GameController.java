@@ -7,6 +7,7 @@ package etf.backgammon.gl130213d.controllers;
 
 import etf.backgammon.gl130213d.models.Board;
 import etf.backgammon.gl130213d.models.Dice;
+import etf.backgammon.gl130213d.models.Field;
 import etf.backgammon.gl130213d.models.Token;
 import etf.backgammon.gl130213d.wrappers.SceneWrapper;
 import java.net.URL;
@@ -24,6 +25,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.util.Pair;
 
 /**
  * FXML Controller class
@@ -37,7 +39,8 @@ public class GameController implements Initializable {
         "Select the field where to move selected token",
         "Select second token",
         "Select the field where to move the second token",
-        "Game Over"
+        "Game Over",
+        "Computer Playing"
     };
 
     public static String FILL_BLANK = "0x11111100";
@@ -140,7 +143,7 @@ public class GameController implements Initializable {
 
     @FXML
     private void handleSetUpButtonAction(ActionEvent event) {
-        if (setUpButton.getText().equals("Start Game")){
+        if (setUpButton.getText().equals("Start Game")) {
             SceneWrapper scene = null;
             if (setUpButton.getScene() instanceof SceneWrapper) {
                 scene = (SceneWrapper) setUpButton.getScene();
@@ -154,12 +157,11 @@ public class GameController implements Initializable {
             matchPoints = Integer.parseInt(scene.getMatchPoints());
             treeDepth = scene.getTreeDepth();
         }
-        
+
         setupBoard();
     }
-    
-    
-    public void setupBoard(){
+
+    public void setupBoard() {
         board = new Board();
         for (Node element : boardGrid.getChildren()) {
             //Set initial colors of all tokens to
@@ -172,7 +174,7 @@ public class GameController implements Initializable {
                     ((Circle) element).setStrokeWidth(STROKE_NONE);
                     tokens[rowIndex][columnIndex] = new Token((Circle) element);
                     //Set onClick listeners
-                    
+
                     if (setUpButton.getText().equals("Start Game")) {
                         element.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
                             @Override
@@ -209,13 +211,13 @@ public class GameController implements Initializable {
         stageLabel.setText(STAGE[0]);
         diceOneLabel.setText(0 + "");
         diceTwoLabel.setText(0 + "");
-        
+
         redBarLabel.setText("0");
         whiteBarLabel.setText("0");
 
         setUpButton.setText("Restart game");
     }
-    
+
     @FXML
     private void handleDiceButtonAction(ActionEvent event) {
         if (stageLabel.getText().equals(STAGE[0])) {
@@ -236,7 +238,7 @@ public class GameController implements Initializable {
                 }
                 stageLabel.setText(STAGE[2]);
             } else {
-                calculateAllowedTokens();
+                allowedTokens = calculateAllowedTokens();
                 stageLabel.setText(STAGE[1]);
             }
             selectedRow = -1;
@@ -248,8 +250,6 @@ public class GameController implements Initializable {
         return (!isCurrentPlayerWhite && Integer.parseInt(redBarLabel.getText()) > 0)
                 || (isCurrentPlayerWhite && Integer.parseInt(whiteBarLabel.getText()) > 0);
     }
-    
-    
 
     private void handleTokenClick(MouseEvent event, Node element) {
         if (element instanceof Circle) {
@@ -294,7 +294,7 @@ public class GameController implements Initializable {
                     }
                     selectedRow = -1;
                     selectedColumn = -1;
-                } else if (isAllowedPosition(rowIndex, columnIndex)) {
+                } else {
                     int oldRowSpike = -1;
                     int oldColumnSpike = -1;
                     if (selectedRow != -1 && selectedColumn != -1) {
@@ -355,7 +355,7 @@ public class GameController implements Initializable {
 
                     String nextStage = stageLabel.getText().equals(STAGE[2]) ? STAGE[3] : STAGE[0];
 
-                    calculateAllowedTokens();
+                    allowedTokens = calculateAllowedTokens();
 
                     for (int i = 0; i < 2; i++) {
                         if (allowedFields[i][0] != -1 && allowedFields[i][1] != -1) {
@@ -397,9 +397,57 @@ public class GameController implements Initializable {
                     if (isCurrentPlayerWinner()) {
                         stageLabel.setText(STAGE[5] + (isCurrentPlayerWhite ? ": White Won" : ": Red Won") + " - HOMEBOARD");
                     }
+                    if (nextStage.equals(STAGE[0]) && nowPlayingLabel.getText().equals("Red") && enemyComputer) {
+                        computerPlay();
+                    }
                 }
             }
         }
+    }
+
+    public void computerPlay() {
+        stageLabel.setText(STAGE[6]);
+
+        dice.roll();
+
+        diceOneLabel.setText(dice.getDiceOneValue() + "");
+        diceTwoLabel.setText(dice.getDiceTwoValue() + "");
+
+        for (int i = 0; i < 2; i++) {
+            Field[] fields = expectiMinimax(treeDepth, dice);
+            System.out.println("fields: " + fields[0].spikeRowIndex + " " + fields[0].spikeColumnIndex + " " + fields[1].spikeRowIndex + " " + fields[1].spikeColumnIndex);
+            if (fields == null) {
+                break;
+            }
+            String[][] currentState = tokenArrayToStringArray(spikes);
+            if ("".equals(currentState[fields[1].spikeRowIndex][fields[1].spikeColumnIndex])) {
+                playerRedPoints -= fields[1].spikeRowIndex - fields[0].spikeRowIndex;
+            } else {
+                playerRedPoints -= fields[1].spikeRowIndex;
+                playerWhitePoints += fields[1].spikeRowIndex;
+                pointsWhiteLabel.setText(playerWhitePoints + "");
+                whiteBarLabel.setText((Integer.parseInt(whiteBarLabel.getText()) + 1) + "");
+            }
+            pointsRedLabel.setText(playerRedPoints + "");
+
+            int rowIndexOld = board.getRowSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
+            int columnIndexOld = board.getColumnSpikeToToken(fields[0].spikeRowIndex, fields[0].spikeColumnIndex);
+
+            int rowIndexNew = board.getRowSpikeToToken(fields[1].spikeRowIndex, fields[1].spikeColumnIndex);
+            int columnIndexNew = board.getColumnSpikeToToken(fields[1].spikeRowIndex, fields[1].spikeColumnIndex);
+
+            tokens[rowIndexOld][columnIndexOld].getCircle().setFill(Color.web(FILL_BLANK));
+            tokens[rowIndexOld][columnIndexOld].getCircle().setStrokeWidth(STROKE_NONE);
+
+            spikes[fields[0].spikeRowIndex][fields[0].spikeColumnIndex] = null;
+
+            tokens[rowIndexNew][columnIndexNew].getCircle().setFill(Color.web(FILL_RED));
+            tokens[rowIndexNew][columnIndexNew].getCircle().setStrokeWidth(STROKE_FULL);
+
+            spikes[fields[1].spikeRowIndex][fields[1].spikeColumnIndex] = tokens[rowIndexNew][columnIndexNew];
+        }
+
+        stageLabel.setText(STAGE[0]);
     }
 
     private void calculateAllowedPositions(Token token, boolean isCurrentPlayerWhite) {
@@ -440,13 +488,14 @@ public class GameController implements Initializable {
         return (allowedFields[0][0] == rowIndex && allowedFields[0][1] == columnIndex) || (allowedFields[1][0] == rowIndex && allowedFields[1][1] == columnIndex);
     }
 
-    private void calculateAllowedTokens() {
+    private ArrayList<Token> calculateAllowedTokens() {
         boolean currentPlayerRed = !isCurrentPlayerWhite;
+        ArrayList<Token> allowedTokens = new ArrayList<>();
         allowedTokens.clear();
         if (currentPlayerRed && Integer.parseInt(redBarLabel.getText()) != 0) {
-
+            return null;
         } else if (!currentPlayerRed && Integer.parseInt(whiteBarLabel.getText()) != 0) {
-
+            return null;
         } else {
             for (int i = 0; i < 24; i++) {
 
@@ -473,10 +522,14 @@ public class GameController implements Initializable {
                 }
             }
         }
+        return allowedTokens;
     }
 
     private boolean isAllowedToken(Token token) {
-        return allowedTokens.contains(token);
+        if (allowedTokens != null) {
+            return allowedTokens.contains(token);
+        }
+        return false;
     }
 
     private void cleanUp() {
@@ -498,6 +551,194 @@ public class GameController implements Initializable {
             }
         }
         return counter == 15;
+    }
+
+    public Field[] expectiMinimax(int depth, Dice dice) {
+
+        Field[] returnFields = null; //Starting field, bestField
+
+        String[][] currentState = tokenArrayToStringArray(spikes);
+        
+        
+        ArrayList<Field> spikeCoordinates = new ArrayList<>();
+        ArrayList<Token> currentAllowedTokens = calculateAllowedTokens();
+        if (currentAllowedTokens == null) {
+            //TODO: must use bar tokens
+        } else {
+            for (Token currentAllowedToken : currentAllowedTokens) {
+                int tokenRowIndex = GridPane.getRowIndex(currentAllowedToken.getCircle());
+                int tokenColumnIndex = GridPane.getColumnIndex(currentAllowedToken.getCircle());
+                Field f = new Field();
+                f.spikeRowIndex = board.getRowTokenToSpike(tokenRowIndex, tokenColumnIndex);
+                f.spikeColumnIndex = board.getColumnTokenToSpike(tokenRowIndex, tokenColumnIndex);
+                spikeCoordinates.add(f);
+            }
+        }
+
+        int player2points = playerRedPoints;
+
+        double min = Double.POSITIVE_INFINITY;
+        int[] diceValues;
+        if (!dice.isDiceOneUsed() && !dice.isDiceTwoUsed()) {
+            diceValues = new int[2];
+            diceValues[0] = dice.getDiceOneValue();
+            diceValues[1] = dice.getDiceTwoValue();
+        } else if (!dice.isDiceOneUsed()) {
+            diceValues = new int[1];
+            diceValues[0] = dice.getDiceOneValue();
+        } else if (!dice.isDiceTwoUsed()) {
+            diceValues = new int[1];
+            diceValues[0] = dice.getDiceTwoValue();
+        } else {
+            diceValues = new int[1];
+            diceValues[0] = 1000;
+        }
+
+        for (Field spikeCoordinate : spikeCoordinates) {
+            ArrayList<Field> allowedFields = getAllowedFields(currentState, spikeCoordinate, diceValues);
+            for (Field allowedField : allowedFields) {
+                String[][] newState = copyStrArr(currentState);
+                newState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex] = "";
+                newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
+                double val = 0;
+                if (depth > 0) {
+                    val = expectiMMforField(allowedField, 1, depth, newState);
+                }
+                if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
+                    val -= allowedField.spikeRowIndex - spikeCoordinate.spikeRowIndex;
+                } else {
+                    val -= allowedField.spikeRowIndex;
+                }
+                if (val < min) {
+                    min = val;
+                    returnFields = new Field[2];
+                    returnFields[0] = spikeCoordinate;
+                    returnFields[1] = allowedField;
+                }
+            }
+
+        }
+
+        return returnFields;
+    }
+
+    public double expectiMMforField(Field f, int curDepth, int maxDepth, String[][] currentState) {
+        double value = 0;
+
+        if (curDepth == maxDepth) {
+            if (maxDepth % 2 == 1) {
+                return f.spikeRowIndex;
+            } else {
+                return 24 - f.spikeRowIndex;
+            }
+        }
+
+        int[] diceValues = {1, 2, 3, 4, 5, 6};
+
+        if (curDepth % 2 == 1) {
+            double max = Double.NEGATIVE_INFINITY;
+
+            ArrayList<Field> allowedFields = getAllowedFields(currentState, f, diceValues);
+            for (Field allowedField : allowedFields) {
+                String[][] newState = copyStrArr(currentState);
+                newState[f.spikeRowIndex][f.spikeColumnIndex] = "";
+                newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "w";
+                double val = expectiMMforField(allowedField, curDepth + 1, maxDepth, newState);
+                if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
+                    val += f.spikeRowIndex - allowedField.spikeRowIndex;
+                } else {
+                    val += allowedField.spikeRowIndex;
+                }
+                if (val > max) {
+                    max = val;
+                }
+            }
+
+            return max;
+            //return highest expectiMMforField
+        }
+
+        if (curDepth % 2 == 0) {
+            double min = Double.POSITIVE_INFINITY;
+
+            ArrayList<Field> allowedFields = getAllowedFields(currentState, f, diceValues);
+            for (Field allowedField : allowedFields) {
+                String[][] newState = copyStrArr(currentState);
+                newState[f.spikeRowIndex][f.spikeColumnIndex] = "";
+                newState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex] = "r";
+                double val = expectiMMforField(allowedField, curDepth + 1, maxDepth, newState);
+                if ("".equals(currentState[allowedField.spikeRowIndex][allowedField.spikeColumnIndex])) {
+                    val -= allowedField.spikeRowIndex - f.spikeRowIndex;
+                } else {
+                    val -= allowedField.spikeRowIndex;
+                }
+                if (val < min) {
+                    min = val;
+                }
+            }
+
+            return min;
+            //return lowest expectiMMforField
+        }
+
+        return value;
+    }
+
+    public String[][] tokenArrayToStringArray(Token[][] tokens) {
+        String[][] returnArray = new String[tokens.length][];
+        for (int i = 0; i < tokens.length; i++) {
+            returnArray[i] = new String[tokens[i].length];
+            for (int j = 0; j < tokens[i].length; j++) {
+                String value;
+                if (tokens[i][j] == null || tokens[i][j].getCircle().getFill().toString().equals(FILL_BLANK)) {
+                    value = "";
+                } else if (tokens[i][j].getCircle().getFill().toString().equals(FILL_RED)) {
+                    value = "r";
+                } else {
+                    value = "w";
+                }
+                returnArray[i][j] = value;
+            }
+        }
+
+        return returnArray;
+    }
+
+    public String[][] copyStrArr(String[][] strArr) {
+        String[][] retStrArr = new String[strArr.length][];
+        for (int i = 0; i < strArr.length; i++) {
+            retStrArr[i] = new String[strArr[i].length];
+            for (int j = 0; j < strArr[i].length; j++) {
+                retStrArr[i][j] = strArr[i][j];
+            }
+        }
+        return retStrArr;
+    }
+
+    private ArrayList<Field> getAllowedFields(String[][] currentState, Field spikeCoordinate, int[] diceValues) {
+        ArrayList<Field> allowedFields = new ArrayList<>();
+        boolean isCurrentRed = "r".equals(currentState[spikeCoordinate.spikeRowIndex][spikeCoordinate.spikeColumnIndex]);
+        for (int i = 0; i < diceValues.length; i++) {
+            int spikeRow = isCurrentRed ? spikeCoordinate.spikeRowIndex + diceValues[i] : spikeCoordinate.spikeRowIndex - diceValues[i];
+            if (spikeRow >= 0 && spikeRow < 24) {
+                if ("".equals(currentState[spikeRow][0])) {
+                    allowedFields.add(new Field(spikeRow, 0));
+                } else if ("".equals(currentState[spikeRow][1]) && (isCurrentRed ? "w".equals(currentState[spikeRow][0]) : "r".equals(currentState[spikeRow][0]))) {
+                    allowedFields.add(new Field(spikeRow, 0));
+                } else {
+                    int firstEmptySpikeColumn = 0;
+                    while (currentState[spikeRow][firstEmptySpikeColumn].equals(isCurrentRed ? "r" : "w")
+                            && firstEmptySpikeColumn != 5) {
+                        firstEmptySpikeColumn++;
+                    }
+
+                    if (firstEmptySpikeColumn != 0) {
+                        allowedFields.add(new Field(spikeRow, firstEmptySpikeColumn));
+                    }
+                }
+            }
+        }
+        return allowedFields;
     }
 
 }
